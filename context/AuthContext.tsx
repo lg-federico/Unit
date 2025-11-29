@@ -29,6 +29,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     useEffect(() => {
         const fetchSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
+            console.log('AuthContext: Initial session check', session ? 'Found' : 'Not found');
             setSession(session);
             setUser(session?.user ?? null);
             if (session?.user) {
@@ -40,6 +41,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         fetchSession();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+            console.log('AuthContext: Auth state change', _event, session ? 'Session exists' : 'No session');
             setSession(session);
             setUser(session?.user ?? null);
             if (session?.user) {
@@ -55,6 +57,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const fetchRole = async (userId: string) => {
         try {
+            console.log('AuthContext: Fetching role for', userId);
             const { data, error } = await supabase
                 .from('profiles')
                 .select('role')
@@ -62,12 +65,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 .single();
 
             if (error) {
-                console.error('Error fetching role:', error);
+                console.error('AuthContext: Error fetching role:', error);
             } else {
+                console.log('AuthContext: Role found:', data?.role);
                 setRole(data?.role as 'admin' | 'client' | null);
             }
         } catch (e) {
-            console.error('Exception fetching role:', e);
+            console.error('AuthContext: Exception fetching role:', e);
         }
     };
 

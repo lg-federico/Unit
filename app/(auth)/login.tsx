@@ -1,13 +1,11 @@
-import { makeRedirectUri } from 'expo-auth-session';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import * as WebBrowser from 'expo-web-browser';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 
-WebBrowser.maybeCompleteAuthSession();
+
 
 export default function Login() {
     const [isLogin, setIsLogin] = useState(true);
@@ -17,7 +15,9 @@ export default function Login() {
 
     // Redirect if already logged in
     useEffect(() => {
+        console.log('Login: Checking redirect. Session:', !!session, 'Role:', role);
         if (session && role) {
+            console.log('Login: Redirecting to', role);
             if (role === 'admin') {
                 router.replace('/(protected)/admin');
             } else if (role === 'client') {
@@ -32,6 +32,15 @@ export default function Login() {
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [companyName, setCompanyName] = useState('');
+
+    // Clear fields when switching between login/registration
+    useEffect(() => {
+        setEmail('');
+        setPassword('');
+        setFirstName('');
+        setLastName('');
+        setCompanyName('');
+    }, [isLogin]);
 
     async function signInWithEmail() {
         setLoading(true);
@@ -76,17 +85,15 @@ export default function Login() {
             setFirstName('');
             setLastName('');
             setCompanyName('');
-            // We keep email/password if we need to switch to login, but if auto-login happens we might clear them
-            // or just let the redirect happen.
+
+            // Explicit Success Alert as requested
+            Alert.alert('Registrazione Completata', 'Il tuo account è stato creato con successo!');
         }
 
         if (session) {
-            // Auto-login successful (Email confirmation disabled)
-            // The AuthContext will detect the session and redirect automatically.
-            // We just clear everything.
             setEmail('');
             setPassword('');
-            Alert.alert('Benvenuto', 'Account creato con successo!');
+            // Auto-login will happen via AuthContext
         } else if (user) {
             // Email confirmation required
             Alert.alert('Successo', 'Controlla la tua email per verificare l\'account!');
@@ -98,35 +105,7 @@ export default function Login() {
         setLoading(false);
     }
 
-    async function signInWithGoogle() {
-        setLoading(true);
-        try {
-            const redirectUrl = makeRedirectUri({
-                path: '/auth/callback',
-            });
 
-            const { data, error } = await supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: {
-                    redirectTo: redirectUrl,
-                    skipBrowserRedirect: true,
-                },
-            });
-
-            if (error) throw error;
-
-            if (data?.url) {
-                const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
-                if (result.type === 'success' && result.url) {
-                    // Handle the callback URL if needed
-                }
-            }
-        } catch (error: any) {
-            Alert.alert('Errore Google Login', error.message);
-        } finally {
-            setLoading(false);
-        }
-    }
 
     return (
         <KeyboardAvoidingView
@@ -318,31 +297,7 @@ export default function Login() {
                             </TouchableOpacity>
                         </View>
 
-                        {/* Social Login */}
-                        <View style={{ marginTop: 32 }}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 24 }}>
-                                <View style={{ flex: 1, height: 1, backgroundColor: '#D1D5DB' }} />
-                                <Text style={{ marginHorizontal: 16, color: '#9CA3AF', fontWeight: '500' }}>oppure continua con</Text>
-                                <View style={{ flex: 1, height: 1, backgroundColor: '#D1D5DB' }} />
-                            </View>
 
-                            <TouchableOpacity
-                                style={{
-                                    flexDirection: 'row',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    backgroundColor: '#fff',
-                                    borderWidth: 1,
-                                    borderColor: '#E5E7EB',
-                                    borderRadius: 12,
-                                    paddingVertical: 16
-                                }}
-                                onPress={signInWithGoogle}
-                                disabled={loading}
-                            >
-                                <Text style={{ color: '#111827', fontWeight: '600', fontSize: 18, marginLeft: 8 }}>Google</Text>
-                            </TouchableOpacity>
-                        </View>
 
                     </View>
                 </ScrollView>
