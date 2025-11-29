@@ -1,8 +1,10 @@
 import { makeRedirectUri } from 'expo-auth-session';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../lib/supabase';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -10,6 +12,19 @@ WebBrowser.maybeCompleteAuthSession();
 export default function Login() {
     const [isLogin, setIsLogin] = useState(true);
     const [loading, setLoading] = useState(false);
+    const router = useRouter();
+    const { session, role } = useAuth();
+
+    // Redirect if already logged in
+    useEffect(() => {
+        if (session && role) {
+            if (role === 'admin') {
+                router.replace('/(protected)/admin');
+            } else if (role === 'client') {
+                router.replace('/(protected)/client');
+            }
+        }
+    }, [session, role]);
 
     // Form State
     const [email, setEmail] = useState('');
@@ -36,9 +51,18 @@ export default function Login() {
         }
 
         setLoading(true);
+        // 1. Sign up the user in auth.users
         const { data: { session, user }, error } = await supabase.auth.signUp({
-            email,
+            email: email.trim(),
             password,
+            options: {
+                data: {
+                    first_name: firstName,
+                    last_name: lastName,
+                    company_name: companyName,
+                    // We can pass metadata here if we have a trigger that copies it to profiles
+                }
+            }
         });
 
         if (error) {
@@ -47,24 +71,30 @@ export default function Login() {
             return;
         }
 
+        // Clear form fields on success
         if (user) {
-            // Update profile with extra details
-            const { error: updateError } = await supabase
-                .from('profiles')
-                .update({
-                    first_name: firstName,
-                    last_name: lastName,
-                    company_name: companyName,
-                })
-                .eq('id', user.id);
-
-            if (updateError) {
-                console.error('Error updating profile:', updateError);
-                Alert.alert('Attenzione', 'Registrazione avvenuta ma errore nel salvataggio dei dati profilo.');
-            } else {
-                Alert.alert('Successo', 'Controlla la tua email per verificare l\'account!');
-            }
+            setFirstName('');
+            setLastName('');
+            setCompanyName('');
+            // We keep email/password if we need to switch to login, but if auto-login happens we might clear them
+            // or just let the redirect happen.
         }
+
+        if (session) {
+            // Auto-login successful (Email confirmation disabled)
+            // The AuthContext will detect the session and redirect automatically.
+            // We just clear everything.
+            setEmail('');
+            setPassword('');
+            Alert.alert('Benvenuto', 'Account creato con successo!');
+        } else if (user) {
+            // Email confirmation required
+            Alert.alert('Successo', 'Controlla la tua email per verificare l\'account!');
+            setIsLogin(true); // Switch to login view
+            setEmail(''); // Optional: clear or keep for convenience
+            setPassword('');
+        }
+
         setLoading(false);
     }
 

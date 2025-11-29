@@ -1,12 +1,20 @@
-import { Text, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../../lib/supabase';
 
 export default function ClientDashboard() {
     return (
-        <View className="flex-1 justify-center items-center bg-white">
-            <Text className="text-2xl font-bold mb-4">Client Dashboard</Text>
-            <Text className="text-gray-600 mb-8">Welcome, Client!</Text>
-            <Text className="text-blue-500" onPress={() => supabase.auth.signOut()}>Sign Out</Text>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+            <View style={{ padding: 20, alignItems: 'center' }}>
+                <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 10 }}>Dashboard Cliente</Text>
+                <Text style={{ fontSize: 16, color: '#666', marginBottom: 30 }}>Benvenuto nella tua area riservata.</Text>
+
+                <TouchableOpacity
+                    onPress={() => supabase.auth.signOut()}
+                    style={{ backgroundColor: '#000', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 }}
+                >
+                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>Esci</Text>
+                </TouchableOpacity>
+            </View>
         </View>
     );
 }
