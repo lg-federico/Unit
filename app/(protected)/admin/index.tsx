@@ -1,5 +1,5 @@
-import { View, Text } from 'react-native';
-import { supabase } from '../../lib/supabase';
+import { Text, View } from 'react-native';
+import { supabase } from '../../../lib/supabase';
 
 export default function AdminDashboard() {
     return (
