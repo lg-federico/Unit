@@ -1,7 +1,10 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Tabs } from 'expo-router';
-import { Platform, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Image, Platform, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '../../../context/AuthContext';
+import { supabase } from '../../../lib/supabase';
 
 function HeaderLogo() {
     return (
@@ -18,6 +21,70 @@ function HeaderLogo() {
                 <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold' }}>U</Text>
             </View>
             <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#111827' }}>Unit</Text>
+        </View>
+    );
+}
+
+function AvatarIcon({ color, size, focused }: { color: string; size: number; focused: boolean }) {
+    const { session } = useAuth();
+    const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (session?.user) {
+            loadAvatar();
+        }
+    }, [session]);
+
+    // Reload avatar when this tab becomes focused and poll for changes
+    useEffect(() => {
+        if (focused && session?.user) {
+            loadAvatar();
+
+            // Poll every 2 seconds while focused to catch avatar changes
+            const interval = setInterval(() => {
+                loadAvatar();
+            }, 2000);
+
+            return () => clearInterval(interval);
+        }
+    }, [focused]);
+
+    async function loadAvatar() {
+        if (!session?.user) return;
+
+        const { data } = await supabase
+            .from('profiles')
+            .select('avatar_url')
+            .eq('id', session.user.id)
+            .single();
+
+        if (data?.avatar_url) {
+            setAvatarUrl(data.avatar_url);
+        } else {
+            setAvatarUrl(null);
+        }
+    }
+
+    return (
+        <View style={{
+            width: size,
+            height: size,
+            borderRadius: size / 2,
+            backgroundColor: '#E5E7EB',
+            overflow: 'hidden',
+            justifyContent: 'center',
+            alignItems: 'center',
+            borderWidth: focused ? 2 : 0,
+            borderColor: color,
+        }}>
+            {avatarUrl ? (
+                <Image
+                    source={{ uri: avatarUrl }}
+                    style={{ width: '100%', height: '100%' }}
+                />
+            ) : (
+                <Ionicons name="person" size={size * 0.6} color={focused ? color : '#9CA3AF'} />
+            )}
         </View>
     );
 }
@@ -73,8 +140,8 @@ export default function ClientLayout() {
                 options={{
                     title: 'Account',
                     tabBarLabel: 'Account',
-                    tabBarIcon: ({ color, size }) => (
-                        <Ionicons name="person-outline" size={size} color={color} />
+                    tabBarIcon: ({ color, size, focused }) => (
+                        <AvatarIcon color={color} size={size} focused={focused} />
                     ),
                 }}
             />
