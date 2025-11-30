@@ -44,8 +44,12 @@ export default function Login() {
 
     async function signInWithEmail() {
         setLoading(true);
+
+        // Trim email to prevent login issues
+        const trimmedEmail = email.trim();
+
         const { error } = await supabase.auth.signInWithPassword({
-            email,
+            email: trimmedEmail,
             password,
         });
 
@@ -56,6 +60,27 @@ export default function Login() {
     async function signUpWithEmail() {
         if (!firstName || !lastName || !companyName) {
             Alert.alert('Attenzione', 'Tutti i campi sono obbligatori.');
+            return;
+        }
+
+        // Password validation
+        if (password.length < 8) {
+            Alert.alert('Password Debole', 'La password deve contenere almeno 8 caratteri.');
+            return;
+        }
+
+        if (!/[A-Z]/.test(password)) {
+            Alert.alert('Password Debole', 'La password deve contenere almeno una lettera maiuscola.');
+            return;
+        }
+
+        if (!/[a-z]/.test(password)) {
+            Alert.alert('Password Debole', 'La password deve contenere almeno una lettera minuscola.');
+            return;
+        }
+
+        if (!/[0-9]/.test(password)) {
+            Alert.alert('Password Debole', 'La password deve contenere almeno un numero.');
             return;
         }
 
@@ -133,7 +158,7 @@ export default function Login() {
                                 <Text style={{ color: '#fff', fontSize: 36, fontWeight: 'bold' }}>U</Text>
                             </View>
                             <Text style={{ fontSize: 36, fontWeight: 'bold', color: '#111827' }}>Unit</Text>
-                            <Text style={{ color: '#6B7280', marginTop: 8, fontSize: 18 }}>Gestione aziendale evoluta</Text>
+                            <Text style={{ color: '#6B7280', marginTop: 8, fontSize: 18 }}>Monitora i tuoi lavori</Text>
                         </View>
 
                         {/* Toggle */}

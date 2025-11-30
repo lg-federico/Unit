@@ -120,7 +120,7 @@ export default function SimulatorScreen() {
     };
 
     return (
-        <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+        <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 20 }} showsVerticalScrollIndicator={false}>
 
             {/* 1. Configuration */}
             <Card title="Configurazione">
